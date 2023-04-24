@@ -191,25 +191,6 @@ class ManageLastAdmin:
             }
         )
 
-    def _is_local_user(self, user_id: str) -> bool:
-        """Checks whether a given user ID belongs to this homeserver, or a remote
-
-        Args:
-            user_id: A user ID to check.
-
-        Returns:
-            True if the user belongs to this homeserver, False otherwise.
-        """
-        user = UserID.from_string(user_id)
-
-        # Extract the localpart and ask the module API for a user ID from the localpart
-        # The module API will append the local homeserver's server_name
-        local_user_id = self._api.get_qualified_user_id(user.localpart)
-
-        # If the user ID we get based on the localpart is the same as the original user
-        # ID, then they were a local user
-        return user_id == local_user_id
-
 
 def _is_last_admin_leaving(
     event: EventBase,
