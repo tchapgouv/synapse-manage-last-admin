@@ -64,7 +64,7 @@ class ManageLastAdminTest(aiounittest.AsyncTestCase):
                     },
                     "room_id": self.room_id,
                 },
-                RoomVersions.V6,
+                RoomVersions.V5,
             ),
             (EventTypes.JoinRules, ""): FrozenEventV3(
                 {
@@ -74,7 +74,7 @@ class ManageLastAdminTest(aiounittest.AsyncTestCase):
                     "content": {"join_rule": "public"},
                     "room_id": self.room_id,
                 },
-                RoomVersions.V6,
+                RoomVersions.V5,
             ),
             (EventTypes.Member, self.mod_user_id): FrozenEventV3(
                 {
@@ -84,7 +84,7 @@ class ManageLastAdminTest(aiounittest.AsyncTestCase):
                     "content": {"membership": Membership.JOIN},
                     "room_id": self.room_id,
                 },
-                RoomVersions.V6,
+                RoomVersions.V5,
             ),
             (EventTypes.Member, self.left_user_id): FrozenEventV3(
                 {
@@ -94,7 +94,7 @@ class ManageLastAdminTest(aiounittest.AsyncTestCase):
                     "content": {"membership": Membership.LEAVE},
                     "room_id": self.room_id,
                 },
-                RoomVersions.V6,
+                RoomVersions.V5,
             ),
         }
 
@@ -110,7 +110,7 @@ class ManageLastAdminTest(aiounittest.AsyncTestCase):
                 "room_id": self.room_id,
                 "state_key": self.user_id,
             },
-            RoomVersions.V6,
+            RoomVersions.V5,
         )
 
         allowed, replacement = await module.check_event_allowed(leave_event, self.state)
@@ -144,7 +144,7 @@ class ManageLastAdminTest(aiounittest.AsyncTestCase):
                 "room_id": self.room_id,
                 "state_key": self.user_id,
             },
-            RoomVersions.V6,
+            RoomVersions.V5,
         )
 
         # Check that we get the right result back from the callback.
@@ -171,7 +171,7 @@ class ManageLastAdminTest(aiounittest.AsyncTestCase):
         # the room.
         self.state[(EventTypes.Member, self.user_id)] = leave_event
         self.state[(EventTypes.PowerLevels, "")] = FrozenEventV3(
-            evt_dict, RoomVersions.V6,
+            evt_dict, RoomVersions.V5,
         )
 
         # Make the mod (newly admin) leave the room.
@@ -183,7 +183,7 @@ class ManageLastAdminTest(aiounittest.AsyncTestCase):
                 "room_id": self.room_id,
                 "state_key": self.mod_user_id,
             },
-            RoomVersions.V6,
+            RoomVersions.V5,
         )
 
         # Check that we get the right result back from the callback.
