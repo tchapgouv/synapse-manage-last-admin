@@ -76,7 +76,7 @@ class ManageLastAdminTestRoomV1(aiounittest.AsyncTestCase):
                 },
                 RoomVersions.V1,
             ),
-            (EventTypes.Member, self.mod_user_id): FrozenEventV3(
+            (EventTypes.Member, self.mod_user_id): FrozenEvent(
                 {
                     "sender": self.mod_user_id,
                     "type": EventTypes.Member,
