@@ -26,7 +26,7 @@ from manage_last_admin import EventTypes, Membership, ManageLastAdmin
 from tests import create_module
 
 
-class ManageLastAdminTest(aiounittest.AsyncTestCase):
+class ManageLastAdminTestRoomV1(aiounittest.AsyncTestCase):
     def setUp(self):
         self.user_id = "@alice:example.com"
         self.left_user_id = "@nothere:example.com"
