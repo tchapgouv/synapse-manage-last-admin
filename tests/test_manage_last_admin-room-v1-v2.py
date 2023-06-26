@@ -98,7 +98,7 @@ class ManageLastAdminTestRoomV1(aiounittest.AsyncTestCase):
             ),
         }
 
-    async def test_power_levels_sent_when_last_admin_leaves(self):
+    async def test_power_levels_sent_when_last_admin_leaves_roomv1(self):
         """Tests that the module sends the right power levels update when it sees its last admin leave."""
         module = create_module()
 
@@ -128,7 +128,7 @@ class ManageLastAdminTestRoomV1(aiounittest.AsyncTestCase):
         for user, pl in pl_event_dict["content"]["users"].items():
             self.assertEqual(pl, 100, user)
 
-    async def test_promote_when_last_admin_leaves(self):
+    async def test_promote_when_last_admin_leaves_roomv1(self):
         """Tests that the module promotes whoever has the highest non-default PL to admin
         when the last admin leaves, if the config allows it.
         """
