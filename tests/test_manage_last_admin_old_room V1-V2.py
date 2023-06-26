@@ -20,7 +20,7 @@ import copy
 # we stop supporting Python < 3.8 in Synapse.
 import aiounittest
 from synapse.api.room_versions import RoomVersions
-from synapse.events import FrozenEventV3
+from synapse.events import FrozenEvent
 
 from manage_last_admin import EventTypes, Membership, ManageLastAdmin
 from tests import create_module
@@ -33,7 +33,7 @@ class ManageLastAdminTest(aiounittest.AsyncTestCase):
         self.mod_user_id = "@mod:example.com"
         self.room_id = "!someroom:example.com"
         self.state = {
-            (EventTypes.PowerLevels, ""): FrozenEventV3(
+            (EventTypes.PowerLevels, ""): FrozenEvent(
                 {
                     "sender": self.user_id,
                     "type": EventTypes.PowerLevels,
@@ -66,7 +66,7 @@ class ManageLastAdminTest(aiounittest.AsyncTestCase):
                 },
                 Roomversions.V9,
             ),
-            (EventTypes.JoinRules, ""): FrozenEventV3(
+            (EventTypes.JoinRules, ""): FrozenEvent(
                 {
                     "sender": self.user_id,
                     "type": EventTypes.JoinRules,
@@ -76,7 +76,7 @@ class ManageLastAdminTest(aiounittest.AsyncTestCase):
                 },
                 Roomversions.V9,
             ),
-            (EventTypes.Member, self.mod_user_id): FrozenEventV3(
+            (EventTypes.Member, self.mod_user_id): FrozenEvent(
                 {
                     "sender": self.mod_user_id,
                     "type": EventTypes.Member,
@@ -86,7 +86,7 @@ class ManageLastAdminTest(aiounittest.AsyncTestCase):
                 },
                 Roomversions.V9,
             ),
-            (EventTypes.Member, self.left_user_id): FrozenEventV3(
+            (EventTypes.Member, self.left_user_id): FrozenEvent(
                 {
                     "sender": self.left_user_id,
                     "type": EventTypes.Member,
@@ -102,7 +102,7 @@ class ManageLastAdminTest(aiounittest.AsyncTestCase):
         """Tests that the module sends the right power levels update when it sees its last admin leave."""
         module = create_module()
 
-        leave_event = FrozenEventV3(
+        leave_event = FrozenEvent(
             {
                 "sender": self.user_id,
                 "type": EventTypes.Member,
@@ -136,7 +136,7 @@ class ManageLastAdminTest(aiounittest.AsyncTestCase):
         module = create_module(config_override={"promote_moderators": True})
 
         # Make the last admin leave.
-        leave_event = FrozenEventV3(
+        leave_event = FrozenEvent(
             {
                 "sender": self.user_id,
                 "type": EventTypes.Member,
@@ -170,12 +170,12 @@ class ManageLastAdminTest(aiounittest.AsyncTestCase):
         # Now we push both the leave event and the power levels update into the state of
         # the room.
         self.state[(EventTypes.Member, self.user_id)] = leave_event
-        self.state[(EventTypes.PowerLevels, "")] = FrozenEventV3(
+        self.state[(EventTypes.PowerLevels, "")] = FrozenEvent(
             evt_dict, Roomversions.V9,
         )
 
         # Make the mod (newly admin) leave the room.
-        new_leave_event = FrozenEventV3(
+        new_leave_event = FrozenEvent(
             {
                 "sender": self.mod_user_id,
                 "type": EventTypes.Member,
