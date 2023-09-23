@@ -212,6 +212,7 @@ class ManageLastAdminTestRoomV1(aiounittest.AsyncTestCase):
         for user, pl in pl_event_dict["content"]["users"].items():
             self.assertEqual(pl, 100, user)
 
+event_count = 0
 
 def _generate_event_id() -> dict:
     """Generate an event id"""
