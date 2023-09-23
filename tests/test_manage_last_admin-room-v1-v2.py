@@ -63,6 +63,7 @@ class ManageLastAdminTestRoomV1(aiounittest.AsyncTestCase):
                         "users_default": 0
                     },
                     "room_id": self.room_id,
+                    **_generate_event_id(),
                 },
                 RoomVersions.V1,
             ),
@@ -73,6 +74,7 @@ class ManageLastAdminTestRoomV1(aiounittest.AsyncTestCase):
                     "state_key": "",
                     "content": {"join_rule": "public"},
                     "room_id": self.room_id,
+                    **_generate_event_id(),
                 },
                 RoomVersions.V1,
             ),
@@ -83,6 +85,7 @@ class ManageLastAdminTestRoomV1(aiounittest.AsyncTestCase):
                     "state_key": self.mod_user_id,
                     "content": {"membership": Membership.JOIN},
                     "room_id": self.room_id,
+                    **_generate_event_id(),
                 },
                 RoomVersions.V1,
             ),
@@ -93,6 +96,7 @@ class ManageLastAdminTestRoomV1(aiounittest.AsyncTestCase):
                     "state_key": self.left_user_id,
                     "content": {"membership": Membership.LEAVE},
                     "room_id": self.room_id,
+                    **_generate_event_id(),
                 },
                 RoomVersions.V1,
             ),
@@ -109,6 +113,7 @@ class ManageLastAdminTestRoomV1(aiounittest.AsyncTestCase):
                 "content": {"membership": Membership.LEAVE},
                 "room_id": self.room_id,
                 "state_key": self.user_id,
+                **_generate_event_id(),
             },
             RoomVersions.V1,
         )
@@ -143,6 +148,7 @@ class ManageLastAdminTestRoomV1(aiounittest.AsyncTestCase):
                 "content": {"membership": Membership.LEAVE},
                 "room_id": self.room_id,
                 "state_key": self.user_id,
+                **_generate_event_id(),
             },
             RoomVersions.V1,
         )
@@ -182,6 +188,7 @@ class ManageLastAdminTestRoomV1(aiounittest.AsyncTestCase):
                 "content": {"membership": Membership.LEAVE},
                 "room_id": self.room_id,
                 "state_key": self.mod_user_id,
+                **_generate_event_id(),
             },
             RoomVersions.V1,
         )
@@ -204,3 +211,12 @@ class ManageLastAdminTestRoomV1(aiounittest.AsyncTestCase):
         self.assertEqual(pl_event_dict["content"]["users_default"], 100)
         for user, pl in pl_event_dict["content"]["users"].items():
             self.assertEqual(pl, 100, user)
+
+
+def _generate_event_id() -> dict:
+    """Generate an event id"""
+
+    global event_count
+    c = event_count
+    event_count += 1
+    return {"event_id": "!%i:example.com" % (c,)}
