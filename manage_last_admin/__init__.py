@@ -154,7 +154,7 @@ class ManageLastAdmin:
                 "type": EventTypes.PowerLevels,
                 "content": power_levels_content,
                 "state_key": "",
-                _maybe_get_event_id_dict_for_room_version(event.room_version),
+                **_maybe_get_event_id_dict_for_room_version(event.room_version),
             }
         )
 
@@ -189,7 +189,7 @@ class ManageLastAdmin:
                 "type": EventTypes.PowerLevels,
                 "content": new_pl_content,
                 "state_key": "",
-                _maybe_get_event_id_dict_for_room_version(event.room_version),
+                **_maybe_get_event_id_dict_for_room_version(event.room_version),
             }
         )
 
