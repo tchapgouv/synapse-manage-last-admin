@@ -21,7 +21,6 @@ import copy
 import aiounittest
 from synapse.api.room_versions import RoomVersions
 from synapse.events import FrozenEvent
-from synapse.util.stringutils import random_string
 
 from manage_last_admin import EventTypes, Membership, ManageLastAdmin
 from tests import create_module

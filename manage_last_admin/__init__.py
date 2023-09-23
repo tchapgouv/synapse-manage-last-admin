@@ -22,6 +22,7 @@ from synapse.events import EventBase
 from synapse.module_api import ModuleApi, UserID
 from synapse.types import StateMap
 from synapse.api.room_versions import RoomVersion, EventFormatVersions
+from synapse.util.stringutils import random_string
 
 
 from manage_last_admin._constants import EventTypes, Membership
