@@ -195,14 +195,6 @@ class ManageLastAdmin:
             }
         )
 
-    def _maybe_get_event_id_dict_for_room_version(room_version: RoomVersion) -> dict:
-        """If this room version needs it, generate an event id"""
-        if room_version.event_format != EventFormatVersions.ROOM_V1_V2:
-            return {}
-
-        randomString = random_string(43)
-        return {"event_id": "!%i:example.com" % (randomString,)}     # TODO : replace example.com with homeserver
-
     def _is_local_user(self, user_id: str) -> bool:
         """Checks whether a given user ID belongs to this homeserver, or a remote
 
@@ -221,6 +213,14 @@ class ManageLastAdmin:
         # If the user ID we get based on the localpart is the same as the original user
         # ID, then they were a local user
         return user_id == local_user_id
+
+def _maybe_get_event_id_dict_for_room_version(room_version: RoomVersion) -> dict:
+        """If this room version needs it, generate an event id"""
+        if room_version.event_format != EventFormatVersions.ROOM_V1_V2:
+            return {}
+
+        randomString = random_string(43)
+        return {"event_id": "!%i:example.com" % (randomString,)}     # TODO : replace example.com with homeserver
 
 
 def _is_last_admin_leaving(
