@@ -154,6 +154,7 @@ class ManageLastAdmin:
                 "type": EventTypes.PowerLevels,
                 "content": power_levels_content,
                 "state_key": "",
+                _maybe_get_event_id_dict_for_room_version(event.room_version),
             }
         )
 
@@ -188,8 +189,17 @@ class ManageLastAdmin:
                 "type": EventTypes.PowerLevels,
                 "content": new_pl_content,
                 "state_key": "",
+                _maybe_get_event_id_dict_for_room_version(event.room_version),
             }
         )
+
+    def _maybe_get_event_id_dict_for_room_version(room_version: RoomVersion) -> dict:
+        """If this room version needs it, generate an event id"""
+        if room_version.event_format != EventFormatVersions.ROOM_V1_V2:
+            return {}
+
+        randomString = random_string(43)
+        return {"event_id": "!%i:example.com" % (randomString,)}     # TODO : replace example.com with homeserver
 
     def _is_local_user(self, user_id: str) -> bool:
         """Checks whether a given user ID belongs to this homeserver, or a remote
