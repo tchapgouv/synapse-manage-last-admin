@@ -157,7 +157,7 @@ class ManageLastAdmin:
                 "type": EventTypes.PowerLevels,
                 "content": power_levels_content,
                 "state_key": "",
-                **_maybe_get_event_id_dict_for_room_version(event.room_version),
+                **_maybe_get_event_id_dict_for_room_version(event.room_version, self.api.server_name()),
             }
         )
 
@@ -192,7 +192,7 @@ class ManageLastAdmin:
                 "type": EventTypes.PowerLevels,
                 "content": new_pl_content,
                 "state_key": "",
-                **_maybe_get_event_id_dict_for_room_version(event.room_version),
+                **_maybe_get_event_id_dict_for_room_version(event.room_version, self.api.server_name()),
             }
         )
 
@@ -215,13 +215,13 @@ class ManageLastAdmin:
         # ID, then they were a local user
         return user_id == local_user_id
 
-def _maybe_get_event_id_dict_for_room_version(room_version: RoomVersion) -> dict:
+def _maybe_get_event_id_dict_for_room_version(room_version: RoomVersion, server_name: str) -> dict:
         """If this room version needs it, generate an event id"""
         if room_version.event_format != EventFormatVersions.ROOM_V1_V2:
             return {}
 
-        randomString = random_string(43)
-        return {"event_id": "!%s:example.com" % (randomString,)}     # TODO : replace example.com with homeserver
+        random_string = random_string(43)
+        return {"event_id": "!%s:%s" % (random_string,server_name)}     # TODO : replace example.com with homeserver
 
 
 def _is_last_admin_leaving(
