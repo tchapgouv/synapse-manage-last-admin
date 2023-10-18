@@ -220,7 +220,7 @@ def _maybe_get_event_id_dict_for_room_version(room_version: RoomVersion, server_
             return {}
 
         random_id = random_string(43)
-        return {"event_id": "!%s:%s" % (random_id,server_name,)}     # TODO : replace example.com with homeserver
+        return {"event_id": "!%s:%s" % (random_id,server_name,)}
 
 
 def _is_last_admin_leaving(

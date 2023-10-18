@@ -22,6 +22,7 @@ import aiounittest
 from synapse.api.room_versions import RoomVersions
 from synapse.events import make_event_from_dict
 from synapse.types import JsonDict
+from synapse.util.stringutils import random_string
 
 from manage_last_admin import EventTypes, Membership, ManageLastAdmin
 from tests import create_module
@@ -212,13 +213,9 @@ class ManageLastAdminTestRoomV9(ManageLastAdminTestCases.BaseManageLastAdminTest
 
 
 class ManageLastAdminTestRoomV1(ManageLastAdminTestCases.BaseManageLastAdminTest):
-    def setUp(self):
-        self.event_count = 0
-        super().setUp()
 
     def create_event(self, content: JsonDict):
-        self.event_count += 1
-        content["event_id"] = f"!{self.event_count}:example.com"
+        content["event_id"] = f"!{random_string(43)}:example.com"
         return make_event_from_dict(
             content,
             RoomVersions.V1
