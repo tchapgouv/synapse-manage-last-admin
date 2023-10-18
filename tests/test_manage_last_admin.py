@@ -20,7 +20,7 @@ import copy
 # we stop supporting Python < 3.8 in Synapse.
 import aiounittest
 from synapse.api.room_versions import RoomVersions
-from synapse.events import FrozenEvent, FrozenEventV3
+from synapse.events import make_event_from_dict
 from synapse.types import JsonDict
 
 from manage_last_admin import EventTypes, Membership, ManageLastAdmin
@@ -205,7 +205,7 @@ class ManageLastAdminTestCases:
 class ManageLastAdminTestRoomV9(ManageLastAdminTestCases.BaseManageLastAdminTest):
 
     def create_event(self, content: JsonDict):
-        return FrozenEventV3(
+        return make_event_from_dict(
             content,
             RoomVersions.V9
         )
@@ -219,7 +219,7 @@ class ManageLastAdminTestRoomV1(ManageLastAdminTestCases.BaseManageLastAdminTest
     def create_event(self, content: JsonDict):
         self.event_count += 1
         content["event_id"] = f"!{self.event_count}:example.com"
-        return FrozenEvent(
+        return make_event_from_dict(
             content,
             RoomVersions.V1
         )
