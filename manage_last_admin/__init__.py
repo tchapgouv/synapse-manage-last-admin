@@ -17,7 +17,6 @@ import logging
 from typing import List, Tuple, Optional, Set, Iterable
 
 import attr
-from frozendict import frozendict
 from synapse.events import EventBase
 from synapse.module_api import ModuleApi, UserID
 from synapse.types import StateMap
