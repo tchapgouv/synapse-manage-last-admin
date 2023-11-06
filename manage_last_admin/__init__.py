@@ -129,8 +129,11 @@ class ManageLastAdmin:
         # If not, we see the default power level as admin
         logger.info("Make admin as default level in room %s", event.room_id)
 
-        current_power_levels = state_events.get((EventTypes.PowerLevels, ""))
+        await self._set_room_user_defaults_to_admin(event, state_events)
+        return
 
+    async def _set_room_user_defaults_to_admin(self, event, state_events):
+        current_power_levels = state_events.get((EventTypes.PowerLevels, ""))
         # Make a deep copy of the content so we don't edit the "users" dict from
         # the event that's currently in the room's state.
         power_levels_content = (
@@ -138,11 +141,9 @@ class ManageLastAdmin:
             if current_power_levels is None
             else copy.deepcopy(current_power_levels.content)
         )
-
         # Send a new power levels event with a similar content to the previous one
         # except users_default is 100 to allow any user to be admin of the room.
         power_levels_content["users_default"] = 100
-
         # Just to be safe, also delete all users that don't have a power level of
         # 100, in order to prevent anyone from being unable to be admin the room.
         # Julien : I am not why it's needed
@@ -151,7 +152,6 @@ class ManageLastAdmin:
             if level == 100:
                 users[user] = level
         power_levels_content["users"] = users
-
         await self._api.create_and_send_event_into_room(
             {
                 "room_id": event.room_id,
@@ -164,8 +164,6 @@ class ManageLastAdmin:
                 ),
             }
         )
-
-        return
 
     async def _promote_to_admins(
         self,
