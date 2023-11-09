@@ -96,6 +96,11 @@ class ManageLastAdmin:
             event: The event to check.
             state_events: The current state of the room.
         """
+        # Check if the last user is leaving the room.
+        is_last_member = _is_last_member(event, state_events)
+        if is_last_member:
+            return
+
         # Check if the last admin is leaving the room.
         pl_content = _get_power_levels_content_from_state(state_events)
         if pl_content is None:
@@ -132,7 +137,9 @@ class ManageLastAdmin:
         await self._set_room_user_defaults_to_admin(event, state_events)
         return
 
-    async def _set_room_user_defaults_to_admin(self, event, state_events):
+    async def _set_room_user_defaults_to_admin(
+        self, event: EventBase, state_events: StateMap[EventBase]
+    ) -> None:
         current_power_levels = state_events.get((EventTypes.PowerLevels, ""))
         # Make a deep copy of the content so we don't edit the "users" dict from
         # the event that's currently in the room's state.
@@ -209,6 +216,37 @@ def _maybe_get_event_id_dict_for_room_version(
 
     random_id = random_string(43)
     return {"event_id": "!%s:%s" % (random_id, server_name)}
+
+
+def check_if_member_in_room(item: Tuple[Tuple[str, str], EventBase]) -> bool:
+    (event_type, _), event = item
+    return EventTypes.Member == event_type and event.membership in [
+        Membership.JOIN,
+        Membership.INVITE,
+    ]
+
+
+def _is_last_member(
+    event: EventBase,
+    state_events: StateMap[EventBase],
+) -> bool:
+    """Checks if the last member is leaving the room.
+
+    Args:
+        state_events: The current state of the room, from which we can check the room's
+            member list.
+
+    Returns:
+        Whether this event is the last member leaving the room.
+    """
+    # Get all joined/invited members defined in the room's state
+    members_state_event: StateMap[EventBase] = dict(
+        filter(check_if_member_in_room, state_events.items())
+    )
+    return (
+        len(members_state_event) == 1
+        and members_state_event.get((EventTypes.Member, event.sender)) is not None
+    )
 
 
 def _is_last_admin_leaving(

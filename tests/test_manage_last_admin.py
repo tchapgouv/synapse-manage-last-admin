@@ -23,7 +23,7 @@ import aiounittest
 from synapse.api.constants import EventTypes, Membership
 from synapse.api.room_versions import RoomVersions
 from synapse.events import EventBase, make_event_from_dict
-from synapse.types import JsonDict
+from synapse.types import JsonDict, MutableStateMap
 from synapse.util.stringutils import random_string
 
 from tests import create_module
@@ -39,8 +39,12 @@ class ManageLastAdminTestCases:
             self.user_id = "@alice:example.com"
             self.left_user_id = "@nothere:example.com"
             self.mod_user_id = "@mod:example.com"
+            self.regular_user_id = "@someuser:example.com"
             self.room_id = "!someroom:example.com"
-            self.state = {
+            self.state = self.get_room_state_with_several_members()
+
+        def get_room_state_with_several_members(self) -> MutableStateMap[EventBase]:
+            return {
                 (EventTypes.PowerLevels, ""): self.create_event(
                     {
                         "sender": self.user_id,
@@ -67,6 +71,7 @@ class ManageLastAdminTestCases:
                                 self.user_id: 100,
                                 self.left_user_id: 75,
                                 self.mod_user_id: 50,
+                                self.regular_user_id: 0,
                             },
                             "users_default": 0,
                         },
@@ -82,12 +87,112 @@ class ManageLastAdminTestCases:
                         "room_id": self.room_id,
                     },
                 ),
+                (EventTypes.Member, self.user_id): self.create_event(
+                    {
+                        "sender": self.user_id,
+                        "type": EventTypes.Member,
+                        "state_key": self.user_id,
+                        "content": {"membership": Membership.JOIN},
+                        "room_id": self.room_id,
+                    },
+                ),
                 (EventTypes.Member, self.mod_user_id): self.create_event(
                     {
                         "sender": self.mod_user_id,
                         "type": EventTypes.Member,
                         "state_key": self.mod_user_id,
                         "content": {"membership": Membership.JOIN},
+                        "room_id": self.room_id,
+                    },
+                ),
+                (EventTypes.Member, self.regular_user_id): self.create_event(
+                    {
+                        "sender": self.regular_user_id,
+                        "type": EventTypes.Member,
+                        "state_key": self.regular_user_id,
+                        "content": {"membership": Membership.JOIN},
+                        "room_id": self.room_id,
+                    },
+                ),
+                (EventTypes.Member, self.left_user_id): self.create_event(
+                    {
+                        "sender": self.left_user_id,
+                        "type": EventTypes.Member,
+                        "state_key": self.left_user_id,
+                        "content": {"membership": Membership.LEAVE},
+                        "room_id": self.room_id,
+                    },
+                ),
+            }
+
+        def get_room_state_with_one_member(self) -> MutableStateMap[EventBase]:
+            return {
+                (EventTypes.PowerLevels, ""): self.create_event(
+                    {
+                        "sender": self.user_id,
+                        "type": EventTypes.PowerLevels,
+                        "state_key": "",
+                        "content": {
+                            "ban": 50,
+                            "events": {
+                                "m.room.avatar": 50,
+                                "m.room.canonical_alias": 50,
+                                "m.room.encryption": 100,
+                                "m.room.history_visibility": 100,
+                                "m.room.name": 50,
+                                "m.room.power_levels": 100,
+                                "m.room.server_acl": 100,
+                                "m.room.tombstone": 100,
+                            },
+                            "events_default": 0,
+                            "invite": 0,
+                            "kick": 50,
+                            "redact": 50,
+                            "state_default": 50,
+                            "users": {
+                                self.user_id: 100,
+                                self.left_user_id: 75,
+                                self.mod_user_id: 50,
+                                self.regular_user_id: 0,
+                            },
+                            "users_default": 0,
+                        },
+                        "room_id": self.room_id,
+                    },
+                ),
+                (EventTypes.JoinRules, ""): self.create_event(
+                    {
+                        "sender": self.user_id,
+                        "type": EventTypes.JoinRules,
+                        "state_key": "",
+                        "content": {"join_rule": "public"},
+                        "room_id": self.room_id,
+                    },
+                ),
+                (EventTypes.Member, self.user_id): self.create_event(
+                    {
+                        "sender": self.user_id,
+                        "type": EventTypes.Member,
+                        "state_key": self.user_id,
+                        "content": {"membership": Membership.JOIN},
+                        "room_id": self.room_id,
+                    },
+                ),
+                (EventTypes.Member, self.mod_user_id): self.create_event(
+                    {
+                        "sender": self.mod_user_id,
+                        "type": EventTypes.Member,
+                        "state_key": self.mod_user_id,
+                        "content": {"membership": Membership.LEAVE},
+                        "room_id": self.room_id,
+                    },
+                ),
+                (EventTypes.Member, self.regular_user_id): self.create_event(
+                    {
+                        "sender": self.regular_user_id,
+                        "type": EventTypes.Member,
+                        "state_key": self.regular_user_id,
+                        "content": {"membership": Membership.LEAVE},
                         "room_id": self.room_id,
                     },
                 ),
@@ -212,6 +317,31 @@ class ManageLastAdminTestCases:
             self.assertEqual(pl_event_dict["content"]["users_default"], 100)
             for user, pl in pl_event_dict["content"]["users"].items():
                 self.assertEqual(pl, 100, user)
+
+        async def test_last_member_when_last_admin_leaves(self) -> None:
+            """Tests that the module do not send any event when last member of a room leaves."""
+            module = create_module()
+
+            self.state = self.get_room_state_with_one_member()
+
+            leave_event = self.create_event(
+                {
+                    "sender": self.user_id,
+                    "type": EventTypes.Member,
+                    "content": {"membership": Membership.LEAVE},
+                    "room_id": self.room_id,
+                    "state_key": self.user_id,
+                },
+            )
+
+            allowed, replacement = await module.check_event_allowed(
+                leave_event, self.state
+            )
+            self.assertTrue(allowed)
+            self.assertEqual(replacement, None)
+
+            # Test that no event is generated
+            self.assertFalse(module._api.create_and_send_event_into_room.called)  # type: ignore[attr-defined]
 
 
 class ManageLastAdminTestRoomV9(ManageLastAdminTestCases.BaseManageLastAdminTest):
