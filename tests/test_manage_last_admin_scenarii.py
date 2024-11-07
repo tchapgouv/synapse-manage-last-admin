@@ -293,12 +293,16 @@ class ManageLastAdminTestScenarii:
             await self.define_users_power_level(self.state, users_pl)
 
             module = await self.admin_leaves()
-            pl_event_dict = await self.checkAPIcalled(module)
-            self.assertDictEqual(pl_event_dict["content"]["users"], {
-                self.admin_id : 100,
-                self.admin2_id : 100,
-                self.regular_user_id : 0
-            })
+            #this test fails, API is called whereas it shouldn't
+            await self.checkApiNotcalled(module)
+
+            #this is successful :
+            #pl_event_dict = await self.checkAPIcalled(module)
+            #self.assertDictEqual(pl_event_dict["content"]["users"], {
+            #    self.admin_id : 100,
+            #    self.admin2_id : 100,
+            #    self.regular_user_id : 0
+            #})
 
         async def test_last_admin_leaves_with_mod_on_private_room(
             self,
@@ -333,14 +337,16 @@ class ManageLastAdminTestScenarii:
         ) -> None:
             """
             Scenario 4 - Salon Externe - Pas de moderateur
-            6 Participants : 1 admin - 3 par defaut - 2 externe
+            6 Participants : 1 admin - 2 par defaut - 2 externe
             Admin quitte le salon
-            => resultat attendu : aucun changement
+            => resultat attendu : 2 par defaut non externe sont nommés admin
             """
             users_pl = {
                 self.admin_id : 100,
                 self.regular_user_id : 0,
-                self.regular2_user_id : 0
+                self.regular2_user_id : 0,
+                self.external_user_id : 0,
+                self.external2_user_id : 0
             }
             
             self.state = self.get_empty_room()
@@ -349,9 +355,16 @@ class ManageLastAdminTestScenarii:
             await self.define_users_power_level(self.state, users_pl)
 
             module = await self.admin_leaves()
-            await self.checkApiNotcalled(module) #API is not called
 
-        # TODO : API should not be called?
+            pl_event_dict = await self.checkAPIcalled(module)
+            self.assertDictEqual(pl_event_dict["content"]["users"], {
+                self.admin_id : 100,
+                self.regular_user_id : 100, 
+                self.regular2_user_id : 100,
+                self.external_user_id : 0, # external is not promoted
+                self.external2_user_id : 0 # external is not promoted
+            })
+
         async def test_last_admin_leaves_on_external_room_with_mod(
             self,
         ) -> None:
@@ -359,12 +372,12 @@ class ManageLastAdminTestScenarii:
             Scenario 5 - Salon Externe - Moderateur
             6 Participants : 1 admin - 2 moderateurs - 1 par defaut - 2 externe
             Admin quitte le salon
-            => resultat attendu : aucun changement
+            => resultat attendu : 2 moderateurs sont promus
             """
             users_pl = {
                 self.admin_id : 100,
-                self.mod_user_id : 50,
-                self.mod2_user_id : 50,
+                self.mod_user_id : 50, # mod
+                self.mod2_user_id : 50, # mod
                 self.regular_user_id : 0,
                 self.external_user_id : 0
             }
@@ -379,8 +392,8 @@ class ManageLastAdminTestScenarii:
             pl_event_dict = await self.checkAPIcalled(module)
             self.assertDictEqual(pl_event_dict["content"]["users"], {
                 self.admin_id : 100,
-                self.mod_user_id : 100,
-                self.mod2_user_id : 100,
+                self.mod_user_id : 100, #mod is promoted
+                self.mod2_user_id : 100, #mod is promoted
                 self.regular_user_id : 0,
                 self.external_user_id : 0
             })
@@ -397,9 +410,9 @@ class ManageLastAdminTestScenarii:
             """
             users_pl = {
                 self.admin_id : 100,
-                self.mod_user_id : 50,
+                self.mod_user_id : 50, # mod
                 self.regular_user_id : 0,
-                self.external_user_id : 50, # one mod is external
+                self.external_user_id : 50, # mod external
                 self.external2_user_id : 0
             }
             
@@ -413,7 +426,7 @@ class ManageLastAdminTestScenarii:
             pl_event_dict = await self.checkAPIcalled(module)
             self.assertDictEqual(pl_event_dict["content"]["users"], {
                 self.admin_id : 100,
-                self.mod_user_id : 100,
+                self.mod_user_id : 100, # only this mod is promoted
                 self.regular_user_id : 0,
                 self.external_user_id : 50,
                 self.external2_user_id : 0
