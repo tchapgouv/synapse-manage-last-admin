@@ -47,6 +47,7 @@ class ManageLastAdminTestScenarii:
             self.regular_user_id = "@someuser:example.com"
             self.regular2_user_id = "@someuser2:example.com"
             self.external_user_id = "@ext:externe.com"
+            self.external2_user_id = "@ext2:externe.com"
             self.room_id = "!someroom:example.com"
             self.state = self.get_empty_room()
 
@@ -382,6 +383,40 @@ class ManageLastAdminTestScenarii:
                 self.mod2_user_id : 100,
                 self.regular_user_id : 0,
                 self.external_user_id : 0
+            })
+        
+        # TODO : API should not be called?
+        async def test_last_admin_leaves_on_external_room_with_mod_external(
+            self,
+        ) -> None:
+            """
+            Scenario 6 - Salon Externe - Moderateur
+            6 Participants : 1 admin - 1 moderateur - 1 par defaut - 1 moderateur externe
+            Admin quitte le salon
+            => résultat attendu : 1 modérateur -> admin
+            """
+            users_pl = {
+                self.admin_id : 100,
+                self.mod_user_id : 50,
+                self.regular_user_id : 0,
+                self.external_user_id : 50, # one mod is external
+                self.external2_user_id : 0
+            }
+            
+            self.state = self.get_empty_room()
+            self.make_room_unknown(self.state)
+            [self.add_user_membership(self.state, user_id, self.room_id) for user_id in users_pl] # add users
+            await self.define_users_power_level(self.state, users_pl)
+
+            module = await self.admin_leaves()
+
+            pl_event_dict = await self.checkAPIcalled(module)
+            self.assertDictEqual(pl_event_dict["content"]["users"], {
+                self.admin_id : 100,
+                self.mod_user_id : 100,
+                self.regular_user_id : 0,
+                self.external_user_id : 50,
+                self.external2_user_id : 0
             })
 
 class ManageLastAdminTestRoomV9(ManageLastAdminTestScenarii.BaseManageLastAdminTest):
