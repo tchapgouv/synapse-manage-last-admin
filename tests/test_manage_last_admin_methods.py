@@ -16,8 +16,7 @@
 # From Python 3.8 onwards, aiounittest.AsyncTestCase can be replaced by
 # unittest.IsolatedAsyncioTestCase, so we'll be able to get rid of this dependency when
 # we stop supporting Python < 3.8 in Synapse.
-from abc import abstractmethod
-from typing import Any, Dict
+from typing import List
 
 import aiounittest
 from manage_last_admin import _filter_out_users_from_forbidden_domain
@@ -26,7 +25,7 @@ from manage_last_admin import _filter_out_users_from_forbidden_domain
 
 class TestFilterOutUsersFromForbiddenDomain(aiounittest.AsyncTestCase):
 
-    def test_multiple_forbidden_domains(self):
+    def test_multiple_forbidden_domains(self)-> None:
         """Test filtering with multiple forbidden domains."""
         user_ids = [
             "@user1:domain1.com",
@@ -39,9 +38,9 @@ class TestFilterOutUsersFromForbiddenDomain(aiounittest.AsyncTestCase):
         result = _filter_out_users_from_forbidden_domain(user_ids, forbidden_domains)
         self.assertEqual(result, ["@user2:domain2.com", "@user4:domain4.com"])
 
-    def test_empty_list_of_domain(self):
+    def test_empty_list_of_domain(self)-> None:
         """Test filtering with empty params"""
         user_ids = ["@user1:domain1.com"]
-        forbidden_domains = []
+        forbidden_domains:List[str] = []
         result = _filter_out_users_from_forbidden_domain(user_ids, forbidden_domains)
         self.assertEqual(result, ["@user1:domain1.com"])

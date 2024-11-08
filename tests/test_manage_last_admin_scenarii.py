@@ -55,7 +55,7 @@ class ManageLastAdminTestScenarii:
         def get_empty_room(self) -> MutableStateMap[EventBase]:
             return {}
         
-        def add_user_membership(self, state: MutableStateMap, user_id: str, room_id: str
+        def add_user_membership(self, state: MutableStateMap[EventBase], user_id: str, room_id: str
         ) -> None:
             """
             Add a 'm.room.member' event for the user, indicating they joined the room.
@@ -144,7 +144,9 @@ class ManageLastAdminTestScenarii:
             )
             return state
 
-        def add_users_in_room_with_pl(self, state: MutableStateMap[EventBase], users_power_level) ->  MutableStateMap[EventBase]:
+        def add_users_in_room_with_pl(
+            self, state: MutableStateMap[EventBase], users_power_level:Any
+        ) -> None:
             state[(EventTypes.PowerLevels, "")] = self.create_event(
                     {
                         "sender": self.admin_id,
@@ -173,12 +175,13 @@ class ManageLastAdminTestScenarii:
                         "room_id": self.room_id,
                     },
                 )
+            # add users JOIN event
+            for user_id in users_power_level:
+                self.add_user_membership(self.state, user_id, self.room_id)
 
-            [self.add_user_membership(self.state, user_id, self.room_id) for user_id in users_power_level] # add users
 
 
-
-        async def admin_leaves(self) -> any:
+        async def admin_leaves(self) -> Any:
             module = create_module(config_override={
                 "promote_moderators": True, 
                 "domains_forbidden_when_restricted":CONFIG_DOMAINS_FORBIDDEN_WHEN_RESTRICTED}
@@ -201,16 +204,16 @@ class ManageLastAdminTestScenarii:
             self.assertEqual(replacement, None)
             return module
 
-        async def checkAPIcalled(self, module) -> any:
+        async def checkAPIcalled(self, module:Any) -> Any:
             # Test that the leave triggered a freeze of the room.
-            self.assertTrue(module._api.create_and_send_event_into_room.called)  # type: ignore[attr-defined]
-            args, _ = module._api.create_and_send_event_into_room.call_args  # type: ignore[attr-defined]
+            self.assertTrue(module._api.create_and_send_event_into_room.called) 
+            args, _ = module._api.create_and_send_event_into_room.call_args()
             self.assertEqual(len(args), 1)
             return args[0]
 
-        async def checkApiNotcalled(self, module) -> any:
+        async def checkApiNotcalled(self, module:Any) -> None:
             # Test that the leave triggered a freeze of the room.
-            self.assertFalse(module._api.create_and_send_event_into_room.called)  # type: ignore[attr-defined]
+            self.assertFalse(module._api.create_and_send_event_into_room.called)
 
         """
         Scenarii tests execution
@@ -403,7 +406,7 @@ class ManageLastAdminTestScenarii:
             pl_content = _get_power_levels_content_from_state(self.state)
             
             #method to test
-            last_admin_leaving = _is_last_admin_leaving(leave_event, pl_content, self.state) 
+            last_admin_leaving = _is_last_admin_leaving(leave_event, pl_content, self.state) # type: ignore[arg-type]
             self.assertFalse(last_admin_leaving)
 
 class ManageLastAdminTestRoomV9(ManageLastAdminTestScenarii.BaseManageLastAdminTest):
