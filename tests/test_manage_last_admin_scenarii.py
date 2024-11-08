@@ -26,7 +26,7 @@ from synapse.events import EventBase, make_event_from_dict
 from synapse.types import JsonDict, MutableStateMap
 from synapse.util.stringutils import random_string
 
-from manage_last_admin import ACCESS_RULES_TYPE
+from manage_last_admin import ACCESS_RULES_TYPE, _is_last_admin_leaving, _get_power_levels_content_from_state
 from tests import create_module
 
 
@@ -39,8 +39,8 @@ class ManageLastAdminTestScenarii:
             pass
 
         def setUp(self) -> None:
-            self.admin_id = "@alice:example.com"
-            self.admin2_id = "@alice2:example.com"
+            self.admin_id = "@admin:example.com"
+            self.admin2_id = "@admin2:example.com"
             self.left_user_id = "@nothere:example.com"
             self.mod_user_id = "@mod:example.com"
             self.mod2_user_id = "@mod2:example.com"
@@ -143,43 +143,8 @@ class ManageLastAdminTestScenarii:
                 },
             )
             return state
-                ### TODO: this method does not seem to work
-        def update_user_power_level(self, state: MutableStateMap, user_id: str, power_level: int
-        ) -> None:
-            """
-            Update 'm.room.power_levels' to add/update the power level of the user.
 
-            Args:
-                state_events: Dictionary storing room state events.
-                user_id: The user to add/update in power levels.
-                power_level: The power level to assign to the user.
-            """
-            
-            # Access existing m.room.power_levels event
-            power_levels_event = state.get((EventTypes.PowerLevels, ""))
-            if not power_levels_event:
-                print("m.room.power_levels event not found")
-                return
-            
-            # Copy the current power levels content and update the user's power level
-            pl_content_new = power_levels_event.content.copy()
-            pl_content_new["users"][user_id] = power_level
-            
-            # Create a new m.room.power_levels event with updated user power level
-            new_power_levels_event = self.create_event({
-                "sender": power_levels_event.sender,    # Same sender as original
-                "type": EventTypes.PowerLevels,
-                "state_key": "",
-                "content": pl_content_new,              # Updated content
-                "room_id": power_levels_event.room_id,  # Use the same room_id
-            })
-            
-            # Update the state map with the new power levels event
-            print(f"User {user_id} power level updated to {power_level}")
-            #print(pl_content_new)
-            state[(EventTypes.PowerLevels, "")] = new_power_levels_event
-    
-        async def define_users_power_level(self, state: MutableStateMap[EventBase], users_power_level) ->  MutableStateMap[EventBase]:
+        def add_users_in_room_with_pl(self, state: MutableStateMap[EventBase], users_power_level) ->  MutableStateMap[EventBase]:
             state[(EventTypes.PowerLevels, "")] = self.create_event(
                     {
                         "sender": self.admin_id,
@@ -209,6 +174,10 @@ class ManageLastAdminTestScenarii:
                     },
                 )
 
+            [self.add_user_membership(self.state, user_id, self.room_id) for user_id in users_power_level] # add users
+
+
+
         async def admin_leaves(self) -> any:
             module = create_module(config_override={
                 "promote_moderators": True, 
@@ -223,6 +192,8 @@ class ManageLastAdminTestScenarii:
                     "state_key": self.admin_id,
                 },
             )
+            #print(f"state {self.state}")
+
             allowed, replacement = await module.check_event_allowed(
                 leave_event, self.state
             )
@@ -252,8 +223,7 @@ class ManageLastAdminTestScenarii:
             Scenario 1 - Salon Privee - Pas de moderateur
             3 Participants : 1 admin - 2 par defaut
             Admin quitte le salon
-            => action attendu : mise à jour des default power level
-            => resultat attendu : les 2 par default deviennent admin
+            => action attendu : mise à jour du default power level à 100
             Note : tous les invites seront admin
             """
             users_pl = {
@@ -261,17 +231,13 @@ class ManageLastAdminTestScenarii:
                 self.regular_user_id : 0,
                 self.regular2_user_id : 0
             }
-            
-            self.state = self.get_empty_room()
             self.make_room_private(self.state)
-            [self.add_user_membership(self.state, user_id, self.room_id) for user_id in users_pl] # add users
-            await self.define_users_power_level(self.state, users_pl)
+            self.add_users_in_room_with_pl(self.state, users_pl)
 
             module = await self.admin_leaves()
             pl_event_dict = await self.checkAPIcalled(module)
             self.assertEqual(pl_event_dict["content"]["users_default"], 100)
 
-        # TODO: this is not OK, API should not be called
         async def test_last_admin_leaves_with_more_admins(
             self,
         ) -> None:
@@ -286,23 +252,11 @@ class ManageLastAdminTestScenarii:
                 self.admin2_id : 100,
                 self.regular_user_id : 0
             }
-            
-            self.state = self.get_empty_room()
             self.make_room_unknown(self.state)
-            [self.add_user_membership(self.state, user_id, self.room_id) for user_id in users_pl] # add users
-            await self.define_users_power_level(self.state, users_pl)
+            self.add_users_in_room_with_pl(self.state, users_pl)
 
             module = await self.admin_leaves()
-            #this test fails, API is called whereas it shouldn't
-            await self.checkApiNotcalled(module)
-
-            #this is successful :
-            #pl_event_dict = await self.checkAPIcalled(module)
-            #self.assertDictEqual(pl_event_dict["content"]["users"], {
-            #    self.admin_id : 100,
-            #    self.admin2_id : 100,
-            #    self.regular_user_id : 0
-            #})
+            await self.checkApiNotcalled(module) # API is not called
 
         async def test_last_admin_leaves_with_mod_on_private_room(
             self,
@@ -315,20 +269,19 @@ class ManageLastAdminTestScenarii:
             """
             users_pl = {
                 self.admin_id : 100,
-                self.mod_user_id : 50,
+                self.mod_user_id : 50, # mod
                 self.regular_user_id : 0
             }
             
-            self.state = self.get_empty_room()
             self.make_room_unknown(self.state)
-            [self.add_user_membership(self.state, user_id, self.room_id) for user_id in users_pl] # add users
-            await self.define_users_power_level(self.state, users_pl)
+            self.add_users_in_room_with_pl(self.state, users_pl)
 
-            module = await self.admin_leaves()
+            module = await self.admin_leaves() #method to test
+
             pl_event_dict = await self.checkAPIcalled(module)
             self.assertDictEqual(pl_event_dict["content"]["users"], {
                 self.admin_id: 100,
-                self.mod_user_id : 100,
+                self.mod_user_id : 100, # mod is promoted
                 self.regular_user_id : 0
             })
 
@@ -343,18 +296,16 @@ class ManageLastAdminTestScenarii:
             """
             users_pl = {
                 self.admin_id : 100,
-                self.regular_user_id : 0,
+                self.regular_user_id : 0, 
                 self.regular2_user_id : 0,
-                self.external_user_id : 0,
-                self.external2_user_id : 0
+                self.external_user_id : 0, # user external
+                self.external2_user_id : 0 # user external
             }
             
-            self.state = self.get_empty_room()
             self.make_room_unknown(self.state)
-            [self.add_user_membership(self.state, user_id, self.room_id) for user_id in users_pl] # add users
-            await self.define_users_power_level(self.state, users_pl)
+            self.add_users_in_room_with_pl(self.state, users_pl)
 
-            module = await self.admin_leaves()
+            module = await self.admin_leaves() #method to test
 
             pl_event_dict = await self.checkAPIcalled(module)
             self.assertDictEqual(pl_event_dict["content"]["users"], {
@@ -382,12 +333,10 @@ class ManageLastAdminTestScenarii:
                 self.external_user_id : 0
             }
             
-            self.state = self.get_empty_room()
             self.make_room_unknown(self.state)
-            [self.add_user_membership(self.state, user_id, self.room_id) for user_id in users_pl] # add users
-            await self.define_users_power_level(self.state, users_pl)
+            self.add_users_in_room_with_pl(self.state, users_pl)
 
-            module = await self.admin_leaves()
+            module = await self.admin_leaves() #method to test
 
             pl_event_dict = await self.checkAPIcalled(module)
             self.assertDictEqual(pl_event_dict["content"]["users"], {
@@ -398,7 +347,6 @@ class ManageLastAdminTestScenarii:
                 self.external_user_id : 0
             })
         
-        # TODO : API should not be called?
         async def test_last_admin_leaves_on_external_room_with_mod_external(
             self,
         ) -> None:
@@ -416,12 +364,10 @@ class ManageLastAdminTestScenarii:
                 self.external2_user_id : 0
             }
             
-            self.state = self.get_empty_room()
             self.make_room_unknown(self.state)
-            [self.add_user_membership(self.state, user_id, self.room_id) for user_id in users_pl] # add users
-            await self.define_users_power_level(self.state, users_pl)
+            self.add_users_in_room_with_pl(self.state, users_pl)
 
-            module = await self.admin_leaves()
+            module = await self.admin_leaves() #method to test
 
             pl_event_dict = await self.checkAPIcalled(module)
             self.assertDictEqual(pl_event_dict["content"]["users"], {
@@ -431,6 +377,34 @@ class ManageLastAdminTestScenarii:
                 self.external_user_id : 50,
                 self.external2_user_id : 0
             })
+
+        async def test_is_last_admin_leaving_with_more_admins(
+            self,
+        ) -> None:
+            
+            users_pl = {
+                self.admin_id : 100, 
+                self.admin2_id : 100, #two admins in room
+                self.regular_user_id : 0
+            }
+            
+            self.make_room_unknown(self.state)
+            self.add_users_in_room_with_pl(self.state, users_pl)
+
+            leave_event = self.create_event(
+                {
+                    "sender": self.admin_id,
+                    "type": EventTypes.Member,
+                    "content": {"membership": Membership.LEAVE},
+                    "room_id": self.room_id,
+                    "state_key": self.admin_id,
+                },
+            )
+            pl_content = _get_power_levels_content_from_state(self.state)
+            
+            #method to test
+            last_admin_leaving = _is_last_admin_leaving(leave_event, pl_content, self.state) 
+            self.assertFalse(last_admin_leaving)
 
 class ManageLastAdminTestRoomV9(ManageLastAdminTestScenarii.BaseManageLastAdminTest):
     def create_event(self, content: JsonDict) -> EventBase:

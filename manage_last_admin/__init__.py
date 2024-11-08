@@ -333,10 +333,10 @@ def _is_last_admin_leaving(
 
     if any(
         event_type == EventTypes.Member
-        and event.membership in [Membership.JOIN, Membership.INVITE]
+        and state_event.membership in [Membership.JOIN, Membership.INVITE]
         and state_key in admin_users
         and state_key != event.sender
-        for (event_type, state_key), event in state_events.items()
+        for (event_type, state_key), state_event in state_events.items()
     ):
         # There's another admin user in, or invited to, the room
         return False
