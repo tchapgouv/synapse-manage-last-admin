@@ -20,14 +20,7 @@ from abc import abstractmethod
 from typing import Any, Dict
 
 import aiounittest
-from synapse.api.constants import EventTypes, Membership
-from synapse.api.room_versions import RoomVersions
-from synapse.events import EventBase, make_event_from_dict
-from synapse.types import JsonDict, MutableStateMap
-from synapse.util.stringutils import random_string
-
-from manage_last_admin import ACCESS_RULES_TYPE, _filter_out_users_from_forbidden_domain
-from tests import create_module
+from manage_last_admin import _filter_out_users_from_forbidden_domain
 
 
 
