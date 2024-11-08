@@ -135,7 +135,7 @@ class ManageLastAdmin:
 
             # If we found users to promote, update the power levels event in the room's
             # state.
-            if users_to_promote and len(users_to_promote) > 0:
+            if users_to_promote:
                 #avoid external users to be promoted
                 users_to_promote = _filter_out_users_from_forbidden_domain(
                     users_to_promote, 
