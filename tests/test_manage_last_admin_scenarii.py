@@ -207,7 +207,7 @@ class ManageLastAdminTestScenarii:
         async def checkAPIcalled(self, module:Any) -> Any:
             # Test that the leave triggered a freeze of the room.
             self.assertTrue(module._api.create_and_send_event_into_room.called) 
-            args, _ = module._api.create_and_send_event_into_room.call_args()
+            args, _ = module._api.create_and_send_event_into_room.call_args
             self.assertEqual(len(args), 1)
             return args[0]
 
