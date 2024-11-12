@@ -226,19 +226,25 @@ class ManageLastAdmin:
         for user in users_to_promote:
             new_pl_content["users"][user] = pl_content["users"][event.sender]
 
-        await self._api.create_and_send_event_into_room(
-            {
-                "room_id": event.room_id,
-                "sender": event.sender,
-                "type": EventTypes.PowerLevels,
-                "content": new_pl_content,
-                "state_key": "",
-                **_maybe_get_event_id_dict_for_room_version(
-                    event.room_version, self._api.server_name
-                ),
-            }
-        )
-
+        try: 
+            await self._api.create_and_send_event_into_room(
+                {
+                    "room_id": event.room_id,
+                    "sender": event.sender,
+                    "type": EventTypes.PowerLevels,
+                    "content": new_pl_content,
+                    "state_key": "",
+                    **_maybe_get_event_id_dict_for_room_version(
+                        event.room_version, self._api.server_name
+                    ),
+                }
+            )
+        except Exception as e:  # Catch all other exceptions
+            # Generic handling if you don't know the exact type of the exception
+            # if users_to_promote list if very very large, we might reach the event size limit of 65kb 
+            # see : https://spec.matrix.org/v1.12/client-server-api/#size-limits
+            print(f"An error occurred : {e}")
+ 
 
 def _maybe_get_event_id_dict_for_room_version(
     room_version: RoomVersion, server_name: str
