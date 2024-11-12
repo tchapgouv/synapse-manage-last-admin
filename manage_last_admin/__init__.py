@@ -159,7 +159,6 @@ class ManageLastAdmin:
             # In case of External or Unknown Room
             # promote all users with default power levels except external users
             users_to_promote = _get_users_with_default_pl(pl_content["users"],
-                pl_content.get("users_default", 0),
                 state_events)
             
             #avoid external users to be promoted
@@ -167,7 +166,7 @@ class ManageLastAdmin:
                     users_to_promote, 
                     self._config.domains_forbidden_when_restricted)
             
-            logger.info("Make admin all non-external default power level users room %s", event.room_id)
+            logger.info("Make admin all non-external default power level users room %s: %s", event.room_id, ', '.join(users_to_promote))
             await self._promote_to_admins(users_to_promote, pl_content, event)
 
     async def _set_room_users_default_to_admin(
@@ -376,35 +375,36 @@ def _get_power_levels_content_from_state(
 
     return power_level_content
 
+def _get_members_in_room_from_state_events(state_events: StateMap[EventBase]
+)-> list[str]: 
+    members = []
+    for (event_type, state_key), state_event in state_events.items():
+        if (
+            event_type == EventTypes.Member
+            and state_event.membership == Membership.JOIN
+            and state_event.is_state()
+        ):
+            members.append(state_key)  # state_key is the user ID
+    return members
+
+
 def _get_users_with_default_pl(
-    users_dict: Dict[str, Any],
-    users_default_pl: int,
+    users_pl_dict: Dict[str, Any],
     state_events: StateMap[EventBase]
 )->  Iterable[str]:
     # Make a copy of the users dict so we don't modify the actual event content.
-    users_dict_copy = users_dict.copy()
+    users_dict_copy = users_pl_dict.copy()
 
     # If there's no more user to evaluate, return an empty tuple.
     if not users_dict_copy:
         return []
     
-    # Figure out which users have that power level.
-    users_with_default_pl = [
-        user_id for user_id, pl in users_dict_copy.items() if pl == users_default_pl
-    ]
+    # Figure out which users in still in the room :
+    members_in_room = _get_members_in_room_from_state_events(state_events)
 
-    # Among those users, figure out which ones are still in the room (or have a
-    # pending invite to it): those are the users we need to promote.
-    users_with_default_pl_in_room = [
-        user_id
-        for user_id in users_with_default_pl
-        if (
-            _get_membership(user_id, state_events)
-            in [Membership.JOIN, Membership.INVITE]
-        )
-    ]
+    users_with_default_pl = [user for user in members_in_room if user not in users_pl_dict]
     
-    return users_with_default_pl_in_room
+    return users_with_default_pl
 
 
 def _get_users_with_highest_nondefault_pl(

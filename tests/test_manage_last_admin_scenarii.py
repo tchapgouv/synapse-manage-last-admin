@@ -179,8 +179,6 @@ class ManageLastAdminTestScenarii:
             for user_id in users_power_level:
                 self.add_user_membership(self.state, user_id, self.room_id)
 
-
-
         async def admin_leaves(self) -> Any:
             module = create_module(config_override={
                 "promote_moderators": True, 
@@ -231,10 +229,11 @@ class ManageLastAdminTestScenarii:
             """
             users_pl = {
                 self.admin_id : 100,
-                self.regular_user_id : 0,
-                self.regular2_user_id : 0
             }
+
             self.make_room_private(self.state)
+            self.add_user_membership(self.state, self.regular_user_id, self.room_id)
+            self.add_user_membership(self.state, self.regular2_user_id, self.room_id)
             self.add_users_in_room_with_pl(self.state, users_pl)
 
             module = await self.admin_leaves()
@@ -253,9 +252,10 @@ class ManageLastAdminTestScenarii:
             users_pl = {
                 self.admin_id : 100,
                 self.admin2_id : 100,
-                self.regular_user_id : 0
             }
+            
             self.make_room_unknown(self.state)
+            self.add_user_membership(self.state, self.regular_user_id, self.room_id)
             self.add_users_in_room_with_pl(self.state, users_pl)
 
             module = await self.admin_leaves()
@@ -273,10 +273,9 @@ class ManageLastAdminTestScenarii:
             users_pl = {
                 self.admin_id : 100,
                 self.mod_user_id : 50, # mod
-                self.regular_user_id : 0
             }
-            
             self.make_room_unknown(self.state)
+            self.add_user_membership(self.state, self.regular_user_id, self.room_id)
             self.add_users_in_room_with_pl(self.state, users_pl)
 
             module = await self.admin_leaves() #method to test
@@ -285,7 +284,6 @@ class ManageLastAdminTestScenarii:
             self.assertDictEqual(pl_event_dict["content"]["users"], {
                 self.admin_id: 100,
                 self.mod_user_id : 100, # mod is promoted
-                self.regular_user_id : 0
             })
 
         async def test_last_admin_leaves_on_external_room(
@@ -299,13 +297,13 @@ class ManageLastAdminTestScenarii:
             """
             users_pl = {
                 self.admin_id : 100,
-                self.regular_user_id : 0, 
-                self.regular2_user_id : 0,
-                self.external_user_id : 0, # user external
-                self.external2_user_id : 0 # user external
             }
             
             self.make_room_unknown(self.state)
+            self.add_user_membership(self.state, self.regular_user_id, self.room_id)
+            self.add_user_membership(self.state, self.regular2_user_id, self.room_id)
+            self.add_user_membership(self.state, self.external_user_id, self.room_id)
+            self.add_user_membership(self.state, self.external2_user_id, self.room_id)
             self.add_users_in_room_with_pl(self.state, users_pl)
 
             module = await self.admin_leaves() #method to test
@@ -313,10 +311,8 @@ class ManageLastAdminTestScenarii:
             pl_event_dict = await self.checkAPIcalled(module)
             self.assertDictEqual(pl_event_dict["content"]["users"], {
                 self.admin_id : 100,
-                self.regular_user_id : 100, 
-                self.regular2_user_id : 100,
-                self.external_user_id : 0, # external is not promoted
-                self.external2_user_id : 0 # external is not promoted
+                self.regular_user_id : 100, # only internal is not promoted
+                self.regular2_user_id : 100,# only internal is not promoted
             })
 
         async def test_last_admin_leaves_on_external_room_with_mod(
@@ -332,12 +328,12 @@ class ManageLastAdminTestScenarii:
                 self.admin_id : 100,
                 self.mod_user_id : 50, # mod
                 self.mod2_user_id : 50, # mod
-                self.regular_user_id : 0,
-                self.external_user_id : 0
             }
             
             self.make_room_unknown(self.state)
             self.add_users_in_room_with_pl(self.state, users_pl)
+            self.add_user_membership(self.state, self.regular_user_id, self.room_id)
+            self.add_user_membership(self.state, self.external_user_id, self.room_id)
 
             module = await self.admin_leaves() #method to test
 
@@ -346,8 +342,6 @@ class ManageLastAdminTestScenarii:
                 self.admin_id : 100,
                 self.mod_user_id : 100, #mod is promoted
                 self.mod2_user_id : 100, #mod is promoted
-                self.regular_user_id : 0,
-                self.external_user_id : 0
             })
         
         async def test_last_admin_leaves_on_external_room_with_mod_external(
@@ -362,12 +356,12 @@ class ManageLastAdminTestScenarii:
             users_pl = {
                 self.admin_id : 100,
                 self.mod_user_id : 50, # mod
-                self.regular_user_id : 0,
-                self.external_user_id : 50, # mod external
-                self.external2_user_id : 0
+                self.external_user_id : 50, # mod external # this is not possible in real case
             }
             
             self.make_room_unknown(self.state)
+            self.add_user_membership(self.state, self.regular_user_id, self.room_id)
+            self.add_user_membership(self.state, self.external2_user_id, self.room_id)
             self.add_users_in_room_with_pl(self.state, users_pl)
 
             module = await self.admin_leaves() #method to test
@@ -376,9 +370,7 @@ class ManageLastAdminTestScenarii:
             self.assertDictEqual(pl_event_dict["content"]["users"], {
                 self.admin_id : 100,
                 self.mod_user_id : 100, # only this mod is promoted
-                self.regular_user_id : 0,
                 self.external_user_id : 50,
-                self.external2_user_id : 0
             })
 
         async def test_is_last_admin_leaving_with_more_admins(
@@ -393,6 +385,7 @@ class ManageLastAdminTestScenarii:
             
             self.make_room_unknown(self.state)
             self.add_users_in_room_with_pl(self.state, users_pl)
+            self.add_user_membership(self.state, self.regular_user_id, self.room_id)
 
             leave_event = self.create_event(
                 {
