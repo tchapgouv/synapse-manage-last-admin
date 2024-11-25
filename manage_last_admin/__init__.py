@@ -243,7 +243,7 @@ class ManageLastAdmin:
             # Generic handling if you don't know the exact type of the exception
             # if users_to_promote list if very very large, we might reach the event size limit of 65kb 
             # see : https://spec.matrix.org/v1.12/client-server-api/#size-limits
-            print(f"An error occurred : {e}")
+            logger.info("Cannot send promote event : %s", e)
  
 
 def _maybe_get_event_id_dict_for_room_version(
