@@ -35,5 +35,5 @@ This repository uses `tox` to run tests.
 
 ### Tests
 
-This repository uses `unittest` to run the tests located in the `tests`
+This repository uses `unittest` to run the tests located in the `py`
 directory. They can be ran with `tox -e tests`.
