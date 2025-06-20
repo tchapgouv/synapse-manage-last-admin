@@ -274,7 +274,9 @@ def _get_access_rule_type(
     https://github.com/tchapgouv/synapse-room-access-rules/blob/3ade4c621ed874e2d2c6c9b12c6dd303350639c4/room_access_rules/__init__.py#L962
     """
     access_rule_type_event = state_events.get((ACCESS_RULES_TYPE, ""))
-    if access_rule_type_event is None:
+    if (access_rule_type_event is None
+            or not hasattr(access_rule_type_event, 'content')
+            or "rule" not in access_rule_type_event.content):
         return None
     return access_rule_type_event.content["rule"]
 
