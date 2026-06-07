@@ -26,7 +26,7 @@ from synapse.events import EventBase, make_event_from_dict
 from synapse.types import JsonDict, MutableStateMap
 from synapse.util.stringutils import random_string
 
-from manage_last_admin import ACCESS_RULES_TYPE, _is_last_admin_leaving, _get_power_levels_content_from_state
+from manage_last_admin import ACCESS_RULES_EVENT_TYPE, _is_last_admin_leaving, _get_power_levels_content_from_state
 from tests import create_module
 
 
@@ -91,10 +91,10 @@ class ManageLastAdminTestScenarii:
                     "room_id": self.room_id,
                 },
             )
-            state[(ACCESS_RULES_TYPE, "")] = self.create_event(
+            state[(ACCESS_RULES_EVENT_TYPE, "")] = self.create_event(
                 {
                     "sender": self.admin_id,
-                    "type": ACCESS_RULES_TYPE,
+                    "type": ACCESS_RULES_EVENT_TYPE,
                     "state_key": "",
                     "content": {"rule": "restricted"},
                     "room_id": self.room_id,
@@ -124,10 +124,10 @@ class ManageLastAdminTestScenarii:
                     "room_id": self.room_id,
                 },
             )
-            state[(ACCESS_RULES_TYPE, "")] = self.create_event(
+            state[(ACCESS_RULES_EVENT_TYPE, "")] = self.create_event(
                 {
                     "sender": self.admin_id,
-                    "type": ACCESS_RULES_TYPE,
+                    "type": ACCESS_RULES_EVENT_TYPE,
                     "state_key": "",
                     "content": {"rule": "unrestricted"},
                     "room_id": self.room_id,

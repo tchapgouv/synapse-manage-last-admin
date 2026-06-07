@@ -17,8 +17,7 @@ dependencies = [
 [project.optional-dependencies]
 dev = [
   # for tests
-  "pydantic >= 1.7.4, < 2.0",
-  "matrix-synapse == 1.84.0",
+  "matrix-synapse == 1.153.0",
   "tox",
   "twisted",
   "aiounittest",

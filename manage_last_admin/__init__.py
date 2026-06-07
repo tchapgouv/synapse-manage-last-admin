@@ -35,12 +35,16 @@ class RoomType:
     UNKNOWN: Final = "UNKNOWN"
 
 
-ACCESS_RULES_TYPE = "im.vector.room.access_rules"
+ACCESS_RULES_EVENT_TYPE = "im.vector.room.access_rules"
 
 
-class AccessRules:
+class AccessRulesRule:
     RESTRICTED = "restricted"
     UNRESTRICTED = "unrestricted"
+
+class AccessRulesVisibility:
+    PUBLIC = "public"
+    PRIVATE = "private"
 
 
 @attr.s(auto_attribs=True, frozen=True)
@@ -257,28 +261,14 @@ def _maybe_get_event_id_dict_for_room_version(
     return {"event_id": "!%s:%s" % (random_id, server_name)}
 
 
-def _is_room_encrypted(
+def _get_access_rules_content(
     state_events: StateMap[EventBase],
-) -> bool:
-    room_encryption = state_events.get((EventTypes.RoomEncryption, ""))
-    if room_encryption:
-        return True
-    return False
-
-
-def _get_access_rule_type(
-    state_events: StateMap[EventBase],
-) -> Optional[Any]:
-    """
-    TODO : This method is slightly different from this one:
-    https://github.com/tchapgouv/synapse-room-access-rules/blob/3ade4c621ed874e2d2c6c9b12c6dd303350639c4/room_access_rules/__init__.py#L962
-    """
-    access_rule_type_event = state_events.get((ACCESS_RULES_TYPE, ""))
-    if (access_rule_type_event is None
-            or not hasattr(access_rule_type_event, 'content')
-            or "rule" not in access_rule_type_event.content):
+) -> Optional[dict[str,Any]]:
+    access_rules = state_events.get((ACCESS_RULES_EVENT_TYPE, ""))
+    if (access_rules is None
+            or not hasattr(access_rules, 'content')):
         return None
-    return access_rule_type_event.content["rule"]
+    return access_rules.content
 
 
 def _is_room_public_or_private(
@@ -299,13 +289,18 @@ def _is_room_public_or_private(
 def _get_room_type(
     state_events: StateMap[EventBase],
 ) -> str:
-    is_room_encrypted = _is_room_encrypted(state_events)
-    if not is_room_encrypted:
+    access_rules_content = _get_access_rules_content(state_events)
+    access_rule_type = None
+    access_rule_visibility = None
+    if access_rules_content:
+        access_rule_type = access_rules_content.get("rule")
+        access_rule_visibility = access_rules_content.get("visibility")
+
+    if access_rule_visibility == AccessRulesVisibility.PUBLIC :
         return RoomType.PUBLIC
-    access_rule_type = _get_access_rule_type(state_events)
-    if access_rule_type == AccessRules.RESTRICTED:
+    if access_rule_type == AccessRulesRule.RESTRICTED:
         return RoomType.PRIVATE
-    if access_rule_type == AccessRules.UNRESTRICTED:
+    if access_rule_type == AccessRulesRule.UNRESTRICTED:
         return RoomType.EXTERNAL
     return RoomType.UNKNOWN
 
